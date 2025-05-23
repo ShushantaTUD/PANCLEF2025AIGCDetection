@@ -47,8 +47,8 @@ class TextClassificationTrainer:
     def load_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
       """Load training and test data from the Hugging Face datasets library"""
       try:
-          train_df = pd.read_json("/Users/shushanta/Desktop/panclef2025/train.jsonl", lines=True)
-          test_df = pd.read_json("/Users/shushanta/Desktop/panclef2025/val.jsonl", lines=True)
+          train_df = pd.read_json("train.jsonl", lines=True)
+          test_df = pd.read_json("val.jsonl", lines=True)
 
 
           # Validate and rename columns as necessary
