@@ -1,7 +1,6 @@
-from huggingface_hub import notebook_login
 import pandas as pd
 from datasets import Dataset, DatasetDict
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, DebertaV2Tokenizer
+from transformers import AutoModelForSequenceClassification, DebertaV2Tokenizer
 from transformers import TrainingArguments, Trainer
 from transformers import DataCollatorWithPadding
 import evaluate
@@ -11,10 +10,6 @@ from torch.nn.functional import softmax
 import logging
 import os
 from typing import Tuple, Dict
-from datasets import load_dataset
-
-from huggingface_hub import notebook_login, create_repo
-from huggingface_hub import login
 
 
 
@@ -169,7 +164,7 @@ class TextClassificationTrainer:
                 logging_dir=f"{CFG.output_dir}/logs",
                 load_best_model_at_end=True,
                 metric_for_best_model="f1",
-                push_to_hub=True,
+                push_to_hub=False,
                 hub_strategy="every_save"
             )
 
@@ -237,7 +232,7 @@ def main():
         logger.info("Training model...")
         trainer = text_classifier.train_model(dds)
         # Push tokenizer to hub
-        text_classifier.tokenizer.push_to_hub("Shushant/deberta-v3-finetunedd-panclef2025")
+        # text_classifier.tokenizer.push_to_hub("Shushant/deberta-v3-finetunedd-panclef2025")
 
         # Get predictions as DataFrame
         logger.info("Getting predictions...")
