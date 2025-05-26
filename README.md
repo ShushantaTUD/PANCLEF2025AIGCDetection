@@ -14,3 +14,7 @@ The predictions are in the prediction.jsonl file.
   ```bash
   tira-cli code-submission --path ./ --task generative-ai-authorship-verification-panclef-2025 --dataset pan25-generative-ai-detection-smoke-test-20250428-training --mount-hf-model microsoft/deberta-v3-large
   ```
+
+## Huggingface 
+The model is available on Huggingface platform through 
+https://huggingface.co/Shushant/panclef_data_deberta_finetuned
