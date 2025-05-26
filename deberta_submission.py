@@ -13,6 +13,11 @@ import os
 from typing import Tuple, Dict
 from datasets import load_dataset
 
+from huggingface_hub import notebook_login, create_repo
+from huggingface_hub import login
+
+
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -164,6 +169,8 @@ class TextClassificationTrainer:
                 logging_dir=f"{CFG.output_dir}/logs",
                 load_best_model_at_end=True,
                 metric_for_best_model="f1",
+                push_to_hub=True,
+                hub_strategy="every_save"
             )
 
             # Initialize trainer
@@ -183,24 +190,30 @@ class TextClassificationTrainer:
         except Exception as e:
             raise Exception(f"Error in model training: {e}")
 
-    def get_predictions(self, trainer: Trainer, eval_dataset: Dataset) -> pd.DataFrame:
-        """Get probability predictions for the evaluation dataset and return as DataFrame"""
+    def get_predictions(self, trainer: Trainer, eval_dataset: Dataset, original_df: pd.DataFrame) -> pd.DataFrame:
+        """Get predictions and associate with original IDs"""
         try:
             predictions = trainer.predict(eval_dataset)
             logits = predictions.predictions
             probabilities = softmax(torch.tensor(logits), dim=-1).numpy()
 
-            # Create DataFrame with model-specific column names
-            model_name = CFG.model_name.split('/')[-1]  # Get last part of model name
-            df_predictions = pd.DataFrame(
-                probabilities,
-                columns=[f'p0_{model_name}', f'p1_{model_name}']
-            )
+            # For binary classification, get the probability of class 1
+            prob_class_1 = probabilities[:, 1]
+
+            # Combine with original IDs
+            if 'id' not in original_df.columns:
+                raise ValueError("Missing 'id' column in evaluation dataset")
+
+            df_predictions = pd.DataFrame({
+                'id': original_df['id'],
+                'label': prob_class_1  # Probability of class 1
+            })
 
             return df_predictions
 
         except Exception as e:
             raise Exception(f"Error in getting predictions: {e}")
+
 
     def cleanup(self):
         """Clean up GPU memory"""
@@ -223,14 +236,17 @@ def main():
         # Train model
         logger.info("Training model...")
         trainer = text_classifier.train_model(dds)
+        # Push tokenizer to hub
+        text_classifier.tokenizer.push_to_hub("Shushant/deberta-v3-finetunedd-panclef2025")
 
         # Get predictions as DataFrame
         logger.info("Getting predictions...")
-        df_predictions = text_classifier.get_predictions(trainer, eval_dataset)
+        df_predictions = text_classifier.get_predictions(trainer, eval_dataset, test)
 
         # Save predictions DataFrame
-        output_path = f"{CFG.output_dir}/predictions_{CFG.model_name.split('/')[-1]}.csv"
-        df_predictions.to_csv(output_path, index=False)
+        output_path = f"{CFG.output_dir}/predictions.jsonl"
+        df_predictions.to_json(output_path, orient='records', lines=True)
+
         logger.info(f"Predictions saved to {output_path}")
 
         # Cleanup
