@@ -1,6 +1,7 @@
 import pandas as pd
 from datasets import Dataset
 from transformers import AutoModelForSequenceClassification, DebertaV2Tokenizer
+import click
 import torch
 from torch.nn.functional import softmax
 
@@ -53,14 +54,15 @@ class Predictor:
 
         return predictions_df
 
-    def save_predictions(self, predictions_df: pd.DataFrame):
-        predictions_df.to_json(CFG.output_file, orient="records", lines=True)
 
-def main():
+@click.command()
+@click.option('--input_dir', required=True)
+@click.option('--output', required=True)
+def main(input_dir, output):
     predictor = Predictor()
-    df = predictor.load_data("val.jsonl")
+    df = predictor.load_data(input_dir)
     preds = predictor.predict(df)
-    predictor.save_predictions(preds)
+    preds.to_json(output, orient="records", lines=True)
 
 if __name__ == "__main__":
     main()

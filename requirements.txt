@@ -5,3 +5,4 @@ evaluate
 numpy
 sentencepiece
 protobuf
+click
